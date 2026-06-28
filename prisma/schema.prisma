@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Sport {
+  id          String       @id @default(cuid())
+  key         String       @unique
+  name        String
+  athletes    Athlete[]
+  comparisons Comparison[]
+}
+
+model Athlete {
+  id                    String   @id @default(cuid())
+  name                  String
+  normalizedName        String
+  sportId               String
+  sport                 Sport    @relation(fields: [sportId], references: [id])
+
+  teamOrOrg             String?
+  positionOrWeightClass String?
+  achievements          Json
+  isActive              Boolean  @default(true)
+
+  popularityTier        Int
+  source                String
+  generationModel       String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  comparisonsAsInput   Comparison[]   @relation("InputAthlete")
+  comparisonsAsMatched Comparison[]   @relation("MatchedAthlete")
+  compareMatchesAsA    CompareMatch[] @relation("CompareAthleteA")
+  compareMatchesAsB    CompareMatch[] @relation("CompareAthleteB")
+
+  @@unique([normalizedName, sportId])
+  @@index([normalizedName])
+}
+
+model Comparison {
+  id               String   @id @default(cuid())
+  inputAthleteId   String
+  targetSportId    String
+  matchedAthleteId String
+
+  inputAthlete   Athlete @relation("InputAthlete", fields: [inputAthleteId], references: [id])
+  targetSport    Sport   @relation(fields: [targetSportId], references: [id])
+  matchedAthlete Athlete @relation("MatchedAthlete", fields: [matchedAthleteId], references: [id])
+
+  comparisonSummary String
+  categoryScores    Json
+  generationModel   String?
+  createdAt         DateTime @default(now())
+
+  @@unique([inputAthleteId, targetSportId])
+}
+
+model CompareMatch {
+  id              String   @id @default(cuid())
+  athleteAId      String
+  athleteBId      String
+
+  athleteA Athlete @relation("CompareAthleteA", fields: [athleteAId], references: [id])
+  athleteB Athlete @relation("CompareAthleteB", fields: [athleteBId], references: [id])
+
+  matchPercentage Int
+  explanation     String
+  generationModel String?
+  createdAt       DateTime @default(now())
+
+  @@unique([athleteAId, athleteBId])
+}
