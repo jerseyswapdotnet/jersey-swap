@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { compareAthletes, profileFromAthlete } from "@/lib/generation";
+import { compareAthletes, profileFromAthlete, withDeadline } from "@/lib/generation";
 import { MODEL } from "@/lib/anthropic";
 
 const withRelations = {
@@ -14,6 +14,10 @@ function normalizedPairIds(idX: string, idY: string): [string, string] {
 }
 
 export async function getOrCreateCompareMatch(athleteIdX: string, athleteIdY: string) {
+  return withDeadline(getOrCreateCompareMatchInner(athleteIdX, athleteIdY));
+}
+
+async function getOrCreateCompareMatchInner(athleteIdX: string, athleteIdY: string) {
   const [athleteAId, athleteBId] = normalizedPairIds(athleteIdX, athleteIdY);
 
   const existing = await prisma.compareMatch.findUnique({

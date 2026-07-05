@@ -7,6 +7,8 @@ export function buildProfilePrompt(name: string, sportName: string): string {
 Athlete name (as searched): ${name}
 Sport/league: ${sportName}
 
+The name above may be misspelled or mistyped — figure out who the user most likely means (the most famous real athlete in this sport whose name is closest to what was typed) and use their correct, correctly-spelled canonicalName, not the raw input.
+
 You MUST call the web_search tool at least once before answering, even for athletes you feel certain about — this is mandatory, not optional. Your training data has a cutoff and famous athletes are exactly the ones most likely to have changed teams since then via a trade, free agency move, or transfer (this has bitten this exact use case before — e.g. confidently reporting a player's old team after a high-profile trade). Search for their CURRENT team/org and position specifically, using a query that includes words like "current team 2026" or "latest trade". If the name is ambiguous, assume the most famous athlete by that name in this sport. Search efficiently and don't narrate your search process in text — go straight from searching to the final structured profile.
 
 Generate a structured profile:
@@ -23,6 +25,8 @@ export function buildAutoDetectProfilePrompt(name: string): string {
   return `You are building an athlete profile for a website that compares athletes across different sports. Accuracy and currency matter a lot here — teams and rosters change via trades, free agency, and retirements.
 
 Athlete name (as searched): ${name}
+
+The name above may be misspelled or mistyped — figure out who the user most likely means and use their correct, correctly-spelled canonicalName, not the raw input.
 
 You MUST call the web_search tool at least once before answering, even for athletes you feel certain about — this is mandatory, not optional. Your training data has a cutoff and famous athletes are exactly the ones most likely to have changed teams since then via a trade, free agency move, or transfer. First identify who this athlete is and which sport they play, then search for their CURRENT team/org and position specifically, using a query that includes words like "current team 2026" or "latest trade". If the name is ambiguous, assume the most famous athlete by that name. Search efficiently and don't narrate your search process in text — go straight from searching to the final structured profile.
 
@@ -61,8 +65,9 @@ ${formatProfileForPrompt(inputName, inputSportName, inputProfile)}
 
 Target sport: ${targetSportName}
 
-Find the single best-matching real athlete (active or retired) in ${targetSportName} and provide:
+Find the single best-matching real athlete (active or retired) in ${targetSportName} — this MUST be a different person from the input athlete, never the same person even if they're unusually versatile — and provide:
 - matchedAthleteName: the name fans and media commonly use for them, not a full legal name
+- matchedAthleteProfile: their OWN current teamOrOrg, positionOrWeightClass, achievements, popularityTier (1-5), and isActive — using what you already know, no research needed
 - comparisonSummary: 2-3 punchy sentences on why this is the match
 - categoryScores: for BOTH the input athlete and the matched athlete, score 0-100 on:
   - athleticism
@@ -81,16 +86,25 @@ export function buildRateGuessPrompt(
   userGuessName: string,
   ourBestMatchName: string,
 ): string {
-  return `You're judging a round of a guessing game. A player was shown an athlete and asked "who is their equivalent in ${targetSportName}?" with a time limit, then submitted a guess.
+  return `You're judging a round of a casual guessing game. A player was shown an athlete and asked "who is their equivalent in ${targetSportName}?" with a time limit, then submitted a guess.
 
 Athlete shown:
 ${formatProfileForPrompt(inputName, inputSportName, inputProfile)}
 
 Player's guess: ${userGuessName}
 
-For reference, our own system's top pick for this comparison is ${ourBestMatchName} — but the player's guess does NOT need to match that exactly to score well. Judge their guess on its own merits as a genuine cross-sport comparison: playing style, statistical role, peak dominance, fame. A different but well-reasoned answer can still score highly.
+Our system's top pick: ${ourBestMatchName} — but the player does NOT need to match this to score well.
 
-Give a score 0-100 for how good the guess is, and one simple, direct sentence of feedback explaining why (mention ${ourBestMatchName} only if it helps explain the score). Be honest but not harsh — this is a casual game.`;
+Score the guess generously. Consider ALL of these angles — any one of them is enough reason to give a high score:
+- Similar tier of greatness within their sport (e.g. both all-time greats, both current stars, both role players)
+- Comparable playing style, statistical role, or position
+- Similar peak dominance, winning, or championship pedigree
+- Similar era, cultural footprint, or fame level
+- Any other reasonable logic a sports fan might use to make this connection
+
+Score guide: 90-100 = excellent match (same caliber, style, and era); 70-89 = solid reasonable comparison; 50-69 = has merit, not the first choice; 30-49 = a stretch but defensible; below 30 = genuinely off-base. Lean toward the higher end of whatever range fits — this is a casual game and the player put in the effort.
+
+Give a score 0-100 and ONE short sentence of warm, direct feedback. Only mention ${ourBestMatchName} if it genuinely helps explain the score.`;
 }
 
 export function buildCompareMatchPrompt(
@@ -111,7 +125,17 @@ ${formatProfileForPrompt(nameA, sportA, profileA)}
 Athlete B:
 ${formatProfileForPrompt(nameB, sportB, profileB)}
 
-Rate how good a cross-sport equivalent match these two specific athletes are to EACH OTHER — playing style, statistical role, peak dominance, fame, cultural footprint. Give:
-- matchPercentage: 0-100. Use the full range — a genuinely great match should score high (80+), a weak or mismatched pairing should score low. Don't cluster everyone near 70-80.
+Rate how good a cross-sport equivalent match these two athletes are. Consider ALL of the following — being strong on even a few of these dimensions makes for a legitimate comparison:
+- Similar tier of greatness relative to others in their sport (e.g. both all-time greats, both current stars, both role players)
+- Comparable playing style, court/field role, or position archetype
+- Similar peak dominance and how they compare to their sport's best ever
+- Similar era, fame level, or cultural footprint
+- Similar winning/championship pedigree
+- Any other dimension a knowledgeable sports fan would naturally use to draw the connection
+
+Score guide: 85-100 = iconic match, clearly comparable on multiple dimensions; 65-84 = strong comparison, same tier with meaningful parallels; 45-64 = reasonable with some merit; 25-44 = a stretch; below 25 = genuinely different caliber or style. When in doubt, be generous — users are proposing comparisons they believe in. Two all-time greats from any two sports should score at least 65 just on shared tier alone.
+
+Give:
+- matchPercentage: 0-100
 - explanation: 2-3 punchy sentences justifying the score, confident and direct, no hedging or filler.`;
 }

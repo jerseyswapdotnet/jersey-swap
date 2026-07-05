@@ -132,7 +132,8 @@ export function AthletePicker({
 
       {!isSearching && hasSearched && results.length === 0 && query.trim().length >= 2 && (
         <p className="mt-3 text-sm text-neutral-500">
-          No match yet for &ldquo;{query.trim()}&rdquo; — hit {noMatchActionLabel} and we&rsquo;ll research them.
+          No match yet for &ldquo;{query.trim()}&rdquo; — hit {noMatchActionLabel}{" "}
+          and we&rsquo;ll research them.
         </p>
       )}
     </div>

@@ -23,9 +23,9 @@ const CATEGORIES: Array<{ key: keyof Scores; label: string }> = [
 export function CategoryScoreChart({ athleteAName, athleteBName, scores }: CategoryScoreChartProps) {
   return (
     <div className="rounded-2xl border border-neutral-700 bg-neutral-800/40 p-6">
-      <div className="mb-4 flex justify-between text-sm font-medium">
-        <span className="text-orange-400">{athleteAName}</span>
-        <span className="text-blue-400">{athleteBName}</span>
+      <div className="mb-4 flex justify-between gap-4 text-sm font-medium">
+        <span className="min-w-0 truncate text-orange-400">{athleteAName}</span>
+        <span className="min-w-0 truncate text-right text-blue-400">{athleteBName}</span>
       </div>
       <div className="space-y-4">
         {CATEGORIES.map(({ key, label }) => {

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SportsTranslate — Cross-Sport Athlete Translator",
+  title: "Jersey Swap — Cross-Sport Athlete Comparison",
   description: "Type any athlete, pick a sport, and find their closest equivalent.",
 };
 
@@ -31,12 +31,20 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <header className="grid grid-cols-3 items-center border-b border-neutral-800 px-6 py-3">
-          <div />
-          <Link href="/" className="flex justify-center">
-            <Image src="/logo.png" alt="SportsTranslate" width={1916} height={821} className="h-16 w-auto" priority />
-          </Link>
-          <div className="flex justify-end">
+        <header className="bg-black border-b border-neutral-800">
+          {/* Desktop: nav left, logo center */}
+          <div className="hidden md:grid md:grid-cols-3 md:items-center px-6 py-1">
+            <div className="flex justify-start"><NavTabs /></div>
+            <Link href="/" className="flex justify-center items-center overflow-hidden h-28">
+              <Image src="/logo.png" alt="Jersey Swap" width={1672} height={941} className="h-60 w-auto" priority />
+            </Link>
+            <div />
+          </div>
+          {/* Mobile: logo on top, nav below */}
+          <div className="md:hidden flex flex-col items-center px-4 pt-3 pb-2 gap-2">
+            <Link href="/">
+              <Image src="/logo.png" alt="Jersey Swap" width={1672} height={941} className="w-52 h-[74px] object-cover object-center" priority />
+            </Link>
             <NavTabs />
           </div>
         </header>

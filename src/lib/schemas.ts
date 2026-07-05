@@ -56,7 +56,10 @@ export type CategoryScores = z.infer<typeof CategoryScores>;
 
 export const MatchAndCompareSchema = z.object({
   matchedAthleteName: properName.describe(
-    "Full, correctly capitalized name of the single best-matching real athlete in the target sport.",
+    "Full, correctly capitalized name of the single best-matching real athlete in the target sport. Must be a different person from the input athlete.",
+  ),
+  matchedAthleteProfile: AthleteProfileSchema.omit({ canonicalName: true }).describe(
+    "The matched athlete's OWN current profile (their team, position, achievements, etc.) — not the input athlete's.",
   ),
   comparisonSummary: z
     .string()

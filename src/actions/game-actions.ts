@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { profileFromAthlete, rateGuess } from "@/lib/generation";
+import { profileFromAthlete, rateGuess, withDeadline } from "@/lib/generation";
 import { getOrCreateTranslation } from "./translation-actions";
 
 export async function rateUserGuess(
@@ -9,6 +9,13 @@ export async function rateUserGuess(
   targetSportKey: string,
   guessedAthleteId: string,
 ) {
+  // Slightly larger budget than the default: this composes getOrCreateTranslation,
+  // which already carries its own ~24s deadline, so this outer one needs room for
+  // that plus the rateGuess call that follows it.
+  return withDeadline(rateUserGuessInner(inputAthleteId, targetSportKey, guessedAthleteId), 28_000);
+}
+
+async function rateUserGuessInner(inputAthleteId: string, targetSportKey: string, guessedAthleteId: string) {
   const official = await getOrCreateTranslation(inputAthleteId, targetSportKey);
   const guessedAthlete = await prisma.athlete.findUniqueOrThrow({ where: { id: guessedAthleteId } });
 

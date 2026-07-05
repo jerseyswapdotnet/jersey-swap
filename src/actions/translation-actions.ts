@@ -1,12 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import {
-  athleteCreateData,
-  findEquivalentAndCompare,
-  generateAthleteProfile,
-  profileFromAthlete,
-} from "@/lib/generation";
+import { athleteCreateData, findEquivalentAndCompare, profileFromAthlete, withDeadline } from "@/lib/generation";
 import { normalizeAthleteName } from "@/lib/normalize";
 import { MODEL } from "@/lib/anthropic";
 
@@ -17,6 +12,10 @@ const withRelations = {
 } as const;
 
 export async function getOrCreateTranslation(inputAthleteId: string, targetSportKey: string) {
+  return withDeadline(getOrCreateTranslationInner(inputAthleteId, targetSportKey));
+}
+
+async function getOrCreateTranslationInner(inputAthleteId: string, targetSportKey: string) {
   const targetSport = await prisma.sport.findUniqueOrThrow({ where: { key: targetSportKey } });
 
   const existing = await prisma.comparison.findUnique({
@@ -47,13 +46,15 @@ export async function getOrCreateTranslation(inputAthleteId: string, targetSport
     include: { sport: true },
   });
   // Most matches resolve to an athlete already in our curated set (the common case,
-  // and instant). Only pay for a fresh, search-verified profile when the matched
-  // athlete is genuinely new — that's the one case where it's worth the extra latency.
+  // and instant). When the match is genuinely new, build it straight from
+  // matchedAthleteProfile (part of the same call above) instead of paying for a
+  // second, search-backed generation call — that second round-trip used to be the
+  // main reason some translations took 5s and others took a minute.
   const matchedAthlete =
     existingMatch ??
     (await prisma.athlete.create({
       data: athleteCreateData(
-        await generateAthleteProfile(result.matchedAthleteName, targetSport.name),
+        { canonicalName: result.matchedAthleteName, ...result.matchedAthleteProfile },
         normalizedName,
         targetSport.id,
         "on_demand",

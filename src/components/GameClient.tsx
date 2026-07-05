@@ -21,6 +21,7 @@ type EraMode = "current" | "all-time";
 
 const GUESS_SECONDS = 45;
 const MIN_SPORTS = 2;
+const READY_DELAY_MS = 2000;
 
 export function GameClient({ athletes, sports }: { athletes: GameAthlete[]; sports: GameSport[] }) {
   const [selectedSports, setSelectedSports] = useState<Set<string>>(new Set(sports.map((s) => s.key)));
@@ -99,6 +100,15 @@ export function GameClient({ athletes, sports }: { athletes: GameAthlete[]; spor
     setTimeLeft(GUESS_SECONDS);
     setPhase("guessing");
   }
+
+  // No "start guessing" button — the clock kicks off on its own shortly after
+  // both wheels land, so there's nothing to click between spinning and guessing.
+  useEffect(() => {
+    if (phase !== "ready") return;
+    const t = setTimeout(startGuessing, READY_DELAY_MS);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== "guessing") return;
@@ -211,7 +221,8 @@ export function GameClient({ athletes, sports }: { athletes: GameAthlete[]; spor
             )}
             {selectedSports.size >= MIN_SPORTS && athletePool.length === 0 && (
               <p className="mt-2 text-sm text-amber-400">
-                No {eraMode === "current" ? "active" : ""} athletes in the selected sports yet.
+                No {eraMode === "current" ? "active" : ""}{" "}
+                athletes in the selected sports yet.
               </p>
             )}
           </div>
@@ -251,12 +262,7 @@ export function GameClient({ athletes, sports }: { athletes: GameAthlete[]; spor
                 Who&rsquo;s the <span className="font-bold text-orange-400">{targetSportName}</span> equivalent of{" "}
                 <span className="font-bold text-orange-400">{spunAthlete.name}</span>?
               </p>
-              <button
-                onClick={startGuessing}
-                className="mt-4 w-full rounded-xl bg-orange-600 px-6 py-3 text-lg font-semibold text-white transition hover:bg-orange-500"
-              >
-                Start guessing — {GUESS_SECONDS}s
-              </button>
+              <p className="mt-4 text-sm uppercase tracking-widest text-neutral-500">Get ready...</p>
             </div>
           )}
         </div>
